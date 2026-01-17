@@ -187,5 +187,5 @@ cython_debug/
 #folders
 zip/
 predictions/
-configs/
+#configs/
 logs/
