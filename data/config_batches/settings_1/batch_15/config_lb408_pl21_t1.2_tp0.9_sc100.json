@@ -1,0 +1,28 @@
+{
+  "data": {
+    "file_path": "data/processed/SOLUSD_15m_processed_1-months.csv"
+  },
+  "model": {
+    "model_key": "kronos-mini",
+    "device": "cuda"
+  },
+  "sequential_processing": {
+    "window_size": 429,
+    "step_size": 1
+  },
+  "prediction": {
+    "lookback": 408,
+    "pred_len": 21,
+    "temperature": 1.2,
+    "top_p": 0.9,
+    "sample_count": 100,
+    "group": "SOL_15min-model=kronos-mini-lookback=408-pred_len=21-temperature=1.2-top_p=0.9-sample_count=100"
+  },
+  "output": {
+    "summary_file": "analysis/predictions_summary/SOL_15min-model=kronos-mini-lookback=408-pred_len=21-temperature=1.2-top_p=0.9-sample_count=100_summary.json",
+    "prediction_files_dir": "analysis/predictions/SOL_15min-model=kronos-mini-lookback=408-pred_len=21-temperature=1.2-top_p=0.9-sample_count=100",
+    "prediction_filename_template": "prediction_SOL_15min-model=kronos-mini-lookback=408-pred_len=21-temperature=1.2-top_p=0.9-sample_count=100_{timestamp}.json",
+    "create_timestamped_subdirs": false,
+    "custom_output_path": null
+  }
+}

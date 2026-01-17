@@ -1,0 +1,8 @@
+einops
+huggingface-hub
+numpy
+pandas
+requests
+torch
+tqdm
+safetensors
