@@ -182,7 +182,7 @@ cython_debug/
 
 #models
 
-model.safetensors
+#model.safetensors
 
 #folders
 zip/
