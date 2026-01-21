@@ -86,7 +86,7 @@ def main():
     # Base configuration template
     base_config = {
         "data": {
-            "file_path": "data/processed/SOLUSD_15m_processed_1-months.csv"
+            "file_path": "data/processed/SOLUSD_15m_processed_5-days.csv"
         },
         "model": {
             "model_key": "kronos-mini",

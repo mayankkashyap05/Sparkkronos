@@ -1,6 +1,6 @@
 {
   "data": {
-    "file_path": "data/processed/SOLUSD_15m_processed_5-day.csv"
+    "file_path": "data/processed/SOLUSD_15m_processed_5-days.csv"
   },
   "model": {
     "model_key": "kronos-mini",
