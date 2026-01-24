@@ -1,6 +1,6 @@
 {
   "data": {
-    "file_path": "data/processed/SOLUSD_15m_processed_5-days_log_return.csv"
+    "file_path": "data/processed/SOLUSD_15m_processed_complete_log_return.csv"
   },
   "model": {
     "model_key": "kronos-mini",

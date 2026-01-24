@@ -31,7 +31,6 @@ def main():
     print(f"\nProcessing {os.path.basename(input_path)}...")
 
     # 3. Load Data
-    # We read everything as strings first to check headers, then convert numbers
     df = pd.read_csv(input_path)
     
     # Strip whitespace from column names to be safe
@@ -44,17 +43,16 @@ def main():
         return
 
     # 4. Calculate Log Returns
-    # Create a copy for calculations
     df_calc = df.copy()
     
     numeric_cols = ['open', 'high', 'low', 'close', 'volume']
     
     for col in numeric_cols:
         if col in df_calc.columns:
-            # Force numeric conversion (errors='coerce' turns non-numbers to NaN)
+            # Force numeric conversion
             series = pd.to_numeric(df_calc[col], errors='coerce')
             
-            # Calculate Log Return: ln(Current / Previous)
+            # Calculate Log Return
             if col == 'volume':
                  # Add epsilon to volume to avoid log(0)
                  log_ret = np.log((series + 1e-8) / (series.shift(1) + 1e-8))
@@ -72,15 +70,14 @@ def main():
     # Replace Infinite values with 0
     cols_to_check = [c for c in numeric_cols if c in df_calc.columns]
     
-    # Robust check for infinite values
-    if np.isinf(df_calc[cols_to_check]).any():
+    # --- FIX IS HERE ---
+    # We use .values.any() to check the entire block at once
+    if np.isinf(df_calc[cols_to_check]).values.any():
         print("⚠ Replacing infinite values with 0")
         df_calc[cols_to_check] = df_calc[cols_to_check].replace([np.inf, -np.inf], 0)
 
     # 6. Ensure Strict Column Order
     required_order = ['timestamps', 'open', 'high', 'low', 'close', 'volume']
-    
-    # Filter to only columns that actually exist (in case one is missing)
     final_cols = [c for c in required_order if c in df_calc.columns]
     df_final = df_calc[final_cols]
 
@@ -88,7 +85,7 @@ def main():
     filename = os.path.splitext(os.path.basename(input_path))[0]
     output_path = os.path.join(save_dir, f"{filename}_log_return.csv")
     
-    # Save WITHOUT the pandas index, keeping the raw timestamp string
+    # Save WITHOUT the pandas index
     df_final.to_csv(output_path, index=False)
 
     print("\n" + "="*60)
