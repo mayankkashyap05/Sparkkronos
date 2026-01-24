@@ -1,21 +1,21 @@
 {
   "data": {
-    "file_path": "data/processed/SOLUSD_15m_processed_5-days.csv"
+    "file_path": "data/processed/SOLUSD_15m_processed_5-days_log_return.csv"
   },
   "model": {
     "model_key": "kronos-mini",
     "device": "cuda"
   },
   "sequential_processing": {
-    "window_size": 500,
+    "window_size": 505,
     "step_size": 1
   },
   "prediction": {
-    "lookback": 480,
-    "pred_len": 20,
-    "temperature": 0.6,
-    "top_p": 0.85,
-    "sample_count": 1,
+    "lookback": 504,
+    "pred_len": 1,
+    "temperature": 0.9,
+    "top_p": 0.98,
+    "sample_count": 2,
     "group": "SOL_15min-model={model_key}-lookback={lookback}-pred_len={pred_len}-temperature={temperature}-top_p={top_p}-sample_count={sample_count}"
   },
   "output": {
