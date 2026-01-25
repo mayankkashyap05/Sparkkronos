@@ -1,6 +1,6 @@
 {
   "data": {
-    "file_path": "data/processed/SOLUSD_15m_processed_1-month_trojan_features.csv"
+    "file_path": "data/processed/SOLUSD_15m_processed_1-month_trojan_aligned.csv"
   },
   "model": {
     "model_key": "kronos-mini",
