@@ -7,13 +7,13 @@
     "device": "cuda"
   },
   "sequential_processing": {
-    "window_size": 196,
+    "window_size": 36,
     "step_size": 1
   },
   "prediction": {
-    "lookback": 194,
+    "lookback": 32,
     "pred_len": 4,
-    "temperature": 0.1,
+    "temperature": 0.2,
     "top_p": 0.90,
     "sample_count": 50,
     "group": "SOL_15min-model={model_key}-lookback={lookback}-pred_len={pred_len}-temperature={temperature}-top_p={top_p}-sample_count={sample_count}"
