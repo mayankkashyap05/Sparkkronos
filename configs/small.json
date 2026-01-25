@@ -3,7 +3,7 @@
     "file_path": "data/processed/SOLUSD_15m_processed_1-month_smart_log_return.csv"
   },
   "model": {
-    "model_key": "kronos-mini",
+    "model_key": "kronos-small",
     "device": "cuda"
   },
   "sequential_processing": {
