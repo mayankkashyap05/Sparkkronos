@@ -12,18 +12,18 @@ class PreprocessorConfig:
     fill_gaps: bool = True
     
     # OHLCV validation
-    validate_ohlcv_logic: bool = True
-    fix_ohlcv_violations: bool = True
+    validate_ohlcv_logic: bool = False
+    fix_ohlcv_violations: bool = False
     
     # Volume validation
-    ensure_positive_volume: bool = True
+    ensure_positive_volume: bool = False
     
     # Missing value handling
     price_fill_method: str = 'time_interpolate'  # Best for prices: time-aware interpolation
     volume_fill_method: str = 'forward_mean'      # For volume: forward fill or mean
     
     # Outlier handling (based on percentage change)
-    detect_outliers: bool = True
+    detect_outliers: bool = False
     max_price_change_pct: float = 50.0  # 50% max change between candles
     
     # Ensure no infinite or invalid values
