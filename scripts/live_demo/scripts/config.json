@@ -19,9 +19,9 @@
     "group": "SOL_15min-model={model_key}-max-lookback={lookback}-pred_len={pred_len}-temperature={temperature}-top_p={top_p}-sample_count={sample_count}"
   },
   "output": {
-    "summary_file": "scripts/live_demo/data/result/prediction_summary/{group}_summary",
-    "prediction_files_dir": "scripts/live_demo/data/result/predictions/{group}",
-    "prediction_filename_template": "prediction_{group}.json",
+    "summary_file": "scripts/live_demo/data/result/prediction_summary/summary",
+    "prediction_files_dir": "scripts/live_demo/data/result/predictions",
+    "prediction_filename_template": "prediction.json",
     "create_timestamped_subdirs": false,
     "custom_output_path": null
   }
