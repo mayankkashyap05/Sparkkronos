@@ -25,8 +25,8 @@
     "window_size": 196,
     "step_size": 1,
     "date": "20260126",
-    "time": "231135",
-    "datetime": "20260126_231135",
+    "time": "233639",
+    "datetime": "20260126_233639",
     "group": "SOL_15min-model=kronos-base-max-lookback=192-pred_len=4-temperature=0.1-top_p=0.9-sample_count=50"
   },
   "results": [
