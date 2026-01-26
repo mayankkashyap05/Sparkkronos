@@ -1,0 +1,28 @@
+{
+  "data": {
+    "file_path": "data/processed/SOLUSD_15m_processed_1-month_trojan_aligned.csv"
+  },
+  "model": {
+    "model_key": "kronos-small",
+    "device": "cuda"
+  },
+  "sequential_processing": {
+    "window_size": 36,
+    "step_size": 1
+  },
+  "prediction": {
+    "lookback": 32,
+    "pred_len": 4,
+    "temperature": 0.2,
+    "top_p": 0.90,
+    "sample_count": 50,
+    "group": "SOL_15min-model={model_key}-lookback={lookback}-pred_len={pred_len}-temperature={temperature}-top_p={top_p}-sample_count={sample_count}"
+  },
+  "output": {
+    "summary_file": "analysis/predictions_summary/{group}_summary",
+    "prediction_files_dir": "analysis/predictions/{group}",
+    "prediction_filename_template": "prediction_{group}_{timestamp}.json",
+    "create_timestamped_subdirs": false,
+    "custom_output_path": null
+  }
+}
