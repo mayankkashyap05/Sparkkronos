@@ -15,22 +15,26 @@ def run_script(script_path: Path, capture_output=False, show_live_output=False):
 
     if show_live_output:
         # For long-running scripts, show live progress
+        import threading
+        
         process = subprocess.Popen(
             [sys.executable, str(script_path)],
             cwd=script_path.parent,
             env=env,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stderr=subprocess.STDOUT,  # Merge stderr into stdout
             text=True,
             encoding='utf-8',
             errors='replace',
-            bufsize=1
+            bufsize=0  # Unbuffered
         )
         
         output_lines = []
         
         # Read output line by line and show progress indicators
-        for line in process.stdout: # type: ignore
+        for line in iter(process.stdout.readline, ''): # type: ignore
+            if not line:
+                break
             output_lines.append(line)
             line_stripped = line.strip()
             
@@ -45,9 +49,9 @@ def run_script(script_path: Path, capture_output=False, show_live_output=False):
                 print("    ⏳ Generating predictions...", flush=True)
             elif "PROCESSING COMPLETE" in line_stripped:
                 print("    ✓ Processing complete", flush=True)
-            elif "%" in line_stripped and "|" in line_stripped:
-                # Progress bar detected
-                print(f"    {line_stripped}", end='\r', flush=True)
+            elif "%" in line_stripped and ("█" in line_stripped or "|" in line_stripped or "it/s" in line_stripped or "s/it" in line_stripped):
+                # Progress bar detected (tqdm format)
+                print(f"    {line_stripped}", flush=True)
         
         process.wait()
         
