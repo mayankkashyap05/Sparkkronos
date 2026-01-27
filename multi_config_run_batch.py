@@ -331,7 +331,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Kronos Batch Experiment Runner")
     parser.add_argument("--dir", default="configs", help="Directory containing config files")
     parser.add_argument("--pattern", default="config_*.json", help="File pattern to match")
-    parser.add_argument("--batch", type=int, default=2, help="GPU Batch Size (default: 64)")
+    parser.add_argument("--batch", type=int, default=1200, help="GPU Batch Size (default: 64)")
     
     args = parser.parse_args()
     
