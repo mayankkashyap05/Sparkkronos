@@ -616,6 +616,172 @@ def predict_from_dataframe(data: pd.DataFrame, lookback: int = 400, pred_len: in
         output_config=output_config
     )
 
+# ============================================================================
+# NEW: Batch Prediction Logic (GPU Acceleration)
+# ============================================================================
+
+def _infer_future_timestamps_batch(x_timestamps: pd.Series, pred_len: int) -> pd.Series:
+    """
+    Helper to generate future timestamps based on input frequency.
+    Used specifically for batch processing to avoid overhead.
+    """
+    if len(x_timestamps) == 0:
+        # Fallback if empty
+        return pd.Series(pd.date_range(start=datetime.datetime.now(), periods=pred_len, freq='1H'))
+        
+    last_timestamp = x_timestamps.iloc[-1]
+    
+    # Fast frequency inference
+    if len(x_timestamps) > 1:
+        time_diff = x_timestamps.iloc[1] - x_timestamps.iloc[0]
+        # Try pandas inference first, fallback to simple diff
+        freq = pd.infer_freq(x_timestamps)
+        if freq is None:
+             freq = time_diff
+    else:
+        freq = '1H' # Default fallback
+        
+    future_timestamps = pd.date_range(
+        start=last_timestamp,
+        periods=pred_len + 1,
+        freq=freq
+    )[1:] # Exclude the start date itself (which is the last historical point)
+    
+    return pd.Series(future_timestamps, name='timestamps')
+
+
+def predict_batch_windows(
+    windows_list: List[Dict[str, Any]], 
+    lookback: int, 
+    pred_len: int, 
+    temperature: float = 1.0, 
+    top_p: float = 0.9, 
+    sample_count: int = 1,
+    group: str = "batch",
+    output_config: Optional[Dict[str, Any]] = None
+) -> List[Dict[str, Any]]:
+    """
+    Batch wrapper for KronosPredictor.predict_batch.
+    Processes a list of window dictionaries simultaneously on the GPU.
+    """
+    global predictor
+    if predictor is None:
+        raise Exception('Model not loaded. Call load_model() first')
+
+    # 1. Prepare lists for the model
+    df_list = []
+    x_timestamp_list = []
+    y_timestamp_list = []
+    meta_list = []
+    actuals_list = [] # Store actuals for later
+
+    required_cols = ['open', 'high', 'low', 'close']
+    
+    for window in windows_list:
+        df = window['data'].copy()
+        
+        # --- FIX 1: Ensure timestamps are Datetime Objects ---
+        # This prevents the "unsupported operand" error during date math
+        if 'timestamps' not in df.columns:
+            if pd.api.types.is_datetime64_any_dtype(df.index):
+                df['timestamps'] = df.index
+            else:
+                continue 
+        
+        if not pd.api.types.is_datetime64_any_dtype(df['timestamps']):
+            df['timestamps'] = pd.to_datetime(df['timestamps'])
+        
+        # Slicing context (lookback)
+        if len(df) < lookback:
+            continue 
+            
+        # --- FIX 2: STRICT SEQUENTIAL MATCHING ---
+        # Sequential Mode uses df.iloc[:lookback] (The first 'lookback' rows of the window)
+        # Old Batch Mode used df.iloc[-lookback:] (The last 'lookback' rows) -> INCORRECT
+        # We must align this to ensure inputs are identical.
+        x_df = df.iloc[:lookback][required_cols] 
+        x_ts = df.iloc[:lookback]['timestamps']
+        
+        # --- FIX 3: Capture Actuals (Ground Truth) ---
+        # Sequential Mode captures the future data for comparison. Batch Mode was skipping this.
+        # We now extract the 'pred_len' rows immediately following the input context.
+        actual_data = []
+        if len(df) >= lookback + pred_len:
+            comparison_df = df.iloc[lookback : lookback + pred_len]
+            for _, row in comparison_df.iterrows():
+                actual_data.append({
+                    'timestamp': row['timestamps'].isoformat(),
+                    'open': float(row['open']),
+                    'high': float(row['high']),
+                    'low': float(row['low']),
+                    'close': float(row['close']),
+                    'volume': float(row.get('volume', 0)),
+                })
+        
+        # Generate target timestamps (Future)
+        y_ts = _infer_future_timestamps_batch(x_ts, pred_len)
+        
+        df_list.append(x_df)
+        x_timestamp_list.append(x_ts)
+        y_timestamp_list.append(y_ts)
+        meta_list.append(window)
+        actuals_list.append(actual_data)
+
+    if not df_list:
+        return []
+
+    # 2. Run Batch Prediction on GPU
+    try:
+        pred_dfs = predictor.predict_batch(
+            df_list=df_list,
+            x_timestamp_list=x_timestamp_list,
+            y_timestamp_list=y_timestamp_list,
+            pred_len=pred_len,
+            T=temperature,
+            top_p=top_p,
+            sample_count=sample_count,
+            verbose=False 
+        )
+    except Exception as e:
+        log_error(f"Batch prediction failed: {e}")
+        return []
+
+    # 3. Process and Save Results
+    results = []
+    
+    for i, pred_df in enumerate(pred_dfs):
+        window_meta = meta_list[i]
+        
+        prediction_results = []
+        for ts, row in pred_df.iterrows():
+            prediction_results.append({
+                'timestamp': ts.isoformat(),
+                'open': float(row['open']),
+                'high': float(row['high']),
+                'low': float(row['low']),
+                'close': float(row['close']),
+                'volume': float(row.get('volume', 0)),
+            })
+            
+        save_prediction_results(
+            group=f"{group}_b{window_meta['batch_number']}",
+            prediction_type="Batch Window",
+            prediction_results=prediction_results,
+            actual_data=actuals_list[i],  # <--- FIX 4: Pass the captured actuals
+            input_data=df_list[i],
+            prediction_params={'lookback': lookback, 'pred_len': pred_len},
+            output_config=output_config
+        )
+        
+        results.append({
+            'batch_info': window_meta,
+            'predictions': prediction_results,
+            'pred_df': pred_df,
+            'status': 'success',
+            'error': None
+        })
+        
+    return results
 
 # ============================================================================
 # Main Execution

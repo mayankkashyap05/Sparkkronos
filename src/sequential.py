@@ -16,7 +16,7 @@ Features:
 """
 
 import pandas as pd
-from typing import Iterator, Dict, Any, Optional, Callable
+from typing import Iterator, Dict, Any, Optional, Callable, List
 from dataclasses import dataclass
 import warnings
 
@@ -199,6 +199,69 @@ class SequentialProcessor:
             # Yield result (pipeline waits here for next iteration)
             yield result
     
+    def process_in_chunks(
+        self,
+        df: pd.DataFrame,
+        predict_batch_func: Callable,
+        batch_size: int = 32,
+        **predict_kwargs
+    ) -> Iterator[List[Dict[str, Any]]]:
+        """
+        Process windows in parallel chunks (batches) for GPU acceleration.
+        
+        Args:
+            df: Input DataFrame
+            predict_batch_func: The 'predict_batch_windows' function from app.py
+            batch_size: Number of windows to send to GPU at once
+            **predict_kwargs: Arguments for prediction (lookback, pred_len, etc.)
+            
+        Yields:
+            List of results for each chunk
+        """
+        batch_accumulator = []
+        
+        # Reuse existing generator
+        for window_info in self.generate_batches(df):
+            batch_accumulator.append(window_info)
+            
+            # When bucket is full, process
+            if len(batch_accumulator) >= batch_size:
+                print(f"\n[GPU] Processing chunk of {len(batch_accumulator)} windows...")
+                
+                try:
+                    # Call the batch function
+                    results = predict_batch_func(
+                        windows_list=batch_accumulator,
+                        **predict_kwargs
+                    )
+                    
+                    # Store results internally
+                    for res in results:
+                        self.results.append(res)
+                    
+                    # Yield results to caller
+                    yield results
+                    
+                except Exception as e:
+                    print(f"Chunk failed: {e}")
+                
+                # Reset accumulator
+                batch_accumulator = []
+        
+        # Process remaining windows (final partial chunk)
+        if batch_accumulator:
+            print(f"\n[GPU] Processing final chunk of {len(batch_accumulator)} windows...")
+            try:
+                results = predict_batch_func(
+                    windows_list=batch_accumulator,
+                    **predict_kwargs
+                )
+                for res in results:
+                    self.results.append(res)
+                yield results
+            except Exception as e:
+                print(f"Final chunk failed: {e}")
+
     def get_all_results(self) -> list:
         """Get all processed results"""
         return self.results
@@ -259,6 +322,33 @@ def process_sequential(
     
     return processor.get_all_results()
 
+def process_sequential_batch(
+    df: pd.DataFrame,
+    predict_batch_func: Callable,
+    batch_size: int = 32,
+    window_size: int = 50,
+    step_size: int = 1,
+    **predict_kwargs
+) -> list:
+    """
+    Convenience function for batched sequential processing.
+    
+    Args:
+        df: Input DataFrame
+        predict_batch_func: The 'predict_batch_windows' function
+        batch_size: GPU Batch size (windows per inference)
+        window_size: Size of sliding window
+        step_size: Step between windows
+        **predict_kwargs: Model args (lookback, pred_len, etc.)
+    """
+    config = WindowConfig(window_size=window_size, step_size=step_size)
+    processor = SequentialProcessor(config)
+    
+    # Iterate to drive the generator
+    for _ in processor.process_in_chunks(df, predict_batch_func, batch_size, **predict_kwargs):
+        pass
+        
+    return processor.get_all_results()
 
 if __name__ == "__main__":
     # Simple test
