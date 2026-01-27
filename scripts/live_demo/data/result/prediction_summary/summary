@@ -24,9 +24,9 @@
     "device": "cuda",
     "window_size": 196,
     "step_size": 1,
-    "date": "20260126",
-    "time": "234045",
-    "datetime": "20260126_234045",
+    "date": "20260128",
+    "time": "005645",
+    "datetime": "20260128_005645",
     "group": "SOL_15min-model=kronos-base-max-lookback=192-pred_len=4-temperature=0.1-top_p=0.9-sample_count=50"
   },
   "results": [
