@@ -678,15 +678,15 @@ def predict_batch_windows(
     x_timestamp_list = []
     y_timestamp_list = []
     meta_list = []
-    actuals_list = [] # Store actuals for later
+    actuals_list = [] 
+    last_history_list = [] # Store last history candle
 
     required_cols = ['open', 'high', 'low', 'close']
     
     for window in windows_list:
         df = window['data'].copy()
         
-        # --- FIX 1: Ensure timestamps are Datetime Objects ---
-        # This prevents the "unsupported operand" error during date math
+        # Ensure timestamps are Datetime Objects
         if 'timestamps' not in df.columns:
             if pd.api.types.is_datetime64_any_dtype(df.index):
                 df['timestamps'] = df.index
@@ -700,16 +700,22 @@ def predict_batch_windows(
         if len(df) < lookback:
             continue 
             
-        # --- FIX 2: STRICT SEQUENTIAL MATCHING ---
-        # Sequential Mode uses df.iloc[:lookback] (The first 'lookback' rows of the window)
-        # Old Batch Mode used df.iloc[-lookback:] (The last 'lookback' rows) -> INCORRECT
-        # We must align this to ensure inputs are identical.
+        # INPUT: First 'lookback' rows
         x_df = df.iloc[:lookback][required_cols] 
         x_ts = df.iloc[:lookback]['timestamps']
         
-        # --- FIX 3: Capture Actuals (Ground Truth) ---
-        # Sequential Mode captures the future data for comparison. Batch Mode was skipping this.
-        # We now extract the 'pred_len' rows immediately following the input context.
+        # LAST HISTORY: The very last row of input (t=0)
+        last_row = df.iloc[lookback-1]
+        last_history_data = {
+            'timestamp': last_row['timestamps'].isoformat(),
+            'open': float(last_row['open']),
+            'high': float(last_row['high']),
+            'low': float(last_row['low']),
+            'close': float(last_row['close']),
+            'volume': float(last_row.get('volume', 0)),
+        }
+
+        # ACTUALS: The 'pred_len' rows immediately following lookback
         actual_data = []
         if len(df) >= lookback + pred_len:
             comparison_df = df.iloc[lookback : lookback + pred_len]
@@ -731,6 +737,7 @@ def predict_batch_windows(
         y_timestamp_list.append(y_ts)
         meta_list.append(window)
         actuals_list.append(actual_data)
+        last_history_list.append(last_history_data)
 
     if not df_list:
         return []
@@ -772,7 +779,7 @@ def predict_batch_windows(
             group=f"{group}_b{window_meta['batch_number']}",
             prediction_type="Batch Window",
             prediction_results=prediction_results,
-            actual_data=actuals_list[i],  # <--- FIX 4: Pass the captured actuals
+            actual_data=actuals_list[i],
             input_data=df_list[i],
             prediction_params={'lookback': lookback, 'pred_len': pred_len},
             output_config=output_config
@@ -783,7 +790,9 @@ def predict_batch_windows(
             'predictions': prediction_results,
             'pred_df': pred_df,
             'status': 'success',
-            'error': None
+            'error': None,
+            'actual_data': actuals_list[i],      # <--- Explicitly returned
+            'last_history': last_history_list[i] # <--- Explicitly returned
         })
         
     return results

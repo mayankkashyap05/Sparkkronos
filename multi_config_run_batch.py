@@ -272,10 +272,13 @@ class BatchExperimentRunner:
                 for r in results:
                     clean_entry = {
                         'batch_number': r['batch_info'].get('batch_number'),
-                        # Get the timestamp from the first prediction in the batch window
                         'timestamp': r['predictions'][0]['timestamp'] if r['predictions'] else None,
+                        
+                        # --- THIS LINE ADDS THE LAST VALUE COLUMN ---
+                        'last_history': r.get('last_history'), 
+                        # --------------------------------------------
+                        
                         'predictions': r['predictions'],
-                        # Include actuals if your app.py captures them
                         'actuals': r.get('actual_data', []) 
                     }
                     clean_full_data.append(clean_entry)
