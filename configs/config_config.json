@@ -1,6 +1,6 @@
 {
   "data": {
-    "file_path": "data/processed/SOLUSD_15m_processed_complete_trojan_aligned.csv"
+    "file_path": "data/processed/SOLUSD_15m_processed_5-days_trojan_aligned.csv"
   },
   "model": {
     "model_key": "kronos-mini",
@@ -21,7 +21,7 @@
   "output": {
     "summary_file": "analysis/predictions_summary/SOL_15min-model=kronos-mini-lookback=32-pred_len=4-temperature=0.2-top_p=0.9-sample_count=1_summary",
     "prediction_files_dir": "analysis/predictions/SOL_15min-model=kronos-mini-lookback=32-pred_len=4-temperature=0.2-top_p=0.9-sample_count=1",
-    "prediction_filename_template": "prediction_{group}_{timestamp}.json",
+    "prediction_filename_template": null,
     "create_timestamped_subdirs": false,
     "custom_output_path": null
   }

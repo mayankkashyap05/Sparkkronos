@@ -261,6 +261,46 @@ class BatchExperimentRunner:
                 output_config=output_conf
             )
 
+            # =================================================================
+            # NEW: Save The "Big Prediction File" (Actual Data)
+            # =================================================================
+            if results:
+                logging.info("💾 Aggregating predictions into single file...")
+                
+                # Clean the results to ensure they are JSON serializable
+                clean_full_data = []
+                for r in results:
+                    clean_entry = {
+                        'batch_number': r['batch_info'].get('batch_number'),
+                        # Get the timestamp from the first prediction in the batch window
+                        'timestamp': r['predictions'][0]['timestamp'] if r['predictions'] else None,
+                        'predictions': r['predictions'],
+                        # Include actuals if your app.py captures them
+                        'actuals': r.get('actual_data', []) 
+                    }
+                    clean_full_data.append(clean_entry)
+
+                # Construct path for the Big File
+                # Uses: analysis/predictions/{group}
+                pred_dir = Path(output_conf.get('prediction_files_dir', 'analysis/predictions'))
+                pred_dir.mkdir(parents=True, exist_ok=True)
+                
+                # Filename: {group}_full_predictions.json
+                big_filename = f"{sanitize_filename(vars['group'])}_full_predictions.json"
+                big_filepath = pred_dir / big_filename
+                
+                # Save the big file
+                with open(big_filepath, 'w', encoding='utf-8') as f:
+                    json.dump({
+                        "config": result_entry["config_params"],
+                        "total_windows": len(clean_full_data),
+                        "data": clean_full_data
+                    }, f, indent=2)
+                
+                logging.info(f"✅ FULL PREDICTIONS SAVED TO: {big_filepath}")
+
+            # =================================================================
+
             # 6. Success
             duration = time.time() - start_time
             result_entry.update({

@@ -197,6 +197,11 @@ def save_prediction_results(group: str, prediction_type: str, prediction_results
             filename_template = 'prediction_{group}_{timestamp}.json'
             create_subdirs = False
 
+        # --- CHECK: If template is null/empty, SKIP SAVING ---
+        if not filename_template:
+            return None
+        # -----------------------------------------------------
+
         # Determine base directory
         if custom_path:
             # Custom path overrides everything
@@ -261,7 +266,7 @@ def save_prediction_results(group: str, prediction_type: str, prediction_results
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(save_data, f, indent=2, ensure_ascii=False)
         
-        log_success(f"Results saved to {os.path.basename(filepath)}")
+        # log_success(f"Results saved to {os.path.basename(filepath)}") 
         return filepath
         
     except Exception as e:
